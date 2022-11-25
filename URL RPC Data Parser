@@ -122,7 +122,7 @@ def ifMostMatch(x,y):
          return True
     return False
 def getIt(js,lsN):
-    form = ['Network', 'RPC URL','Chain ID', 'Native Currency', 'Block Explorer','Native Currency']
+    form = ['Network', 'RPC URL','Native Currency', 'chainId', 'Block Explorer','Native Currency']
     for i in range(0,len(lsN)):
         name = lsN[i][0]
         if name not in js['names']:
