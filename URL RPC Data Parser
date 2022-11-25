@@ -121,8 +121,13 @@ def ifMostMatch(x,y):
     if float(cou)/float(len(y)) > float(0.5):
          return True
     return False
+def ifLsInStr(x,ls):
+    for i in range(0,len(ls)):
+        if str(ls[i]).lower() in str(x).lower():
+            return ls[i]
+    return False
 def getIt(js,lsN):
-    form = ['Network', 'RPC URL','Native Currency', 'chainId', 'Block Explorer','Native Currency']
+    form = ['network', 'RPC','nativeCurrency', 'chainId', 'blockExplorer']
     for i in range(0,len(lsN)):
         name = lsN[i][0]
         if name not in js['names']:
@@ -132,16 +137,16 @@ def getIt(js,lsN):
         for k in range(0,len(lsN[i])):
             x = lsN[i][k]
             if 'http' in x:
-                if 'RPC URL' not in jsA:
-                    jsA['RPC URL'] = x
+                if 'RPC' not in jsA:
+                    jsA['RPC'] = x
                 else:
-                    jsA['Block Explorer'] = x
+                    jsA['blockExplorer'] = x
             elif isChainId(x):
                     jsA['chainId'] = x
+            elif ifLsInStr(x,['Mainnet','Testnet']) != False:
+                jsA['network'] = ifLsInStr(x,['Mainnet','Testnet'])
             elif ifMostMatch(name,x):
-                jsA['Native Currency'] = x
-            elif x in ['Mainnet','TestNet']:
-                jsA['Network'] = x
+                jsA['nativeCurrency'] = x
             else:
                 notGot.append(k)
         if len(notGot) >0:
@@ -153,7 +158,6 @@ def getIt(js,lsN):
         js[name].append(jsA)
     return js
 home_it()
-check = {'Blockchain':'name', 'Network':['Mainnet','TestNet'], 'RPC URL':'https', 'Ping':'ms', 'Chain ID':'isInt', 'Native Currency':None, 'Block Explorer':'https','Gas Price (GWEI)':None, 'Block Number':None}
 js = {'names':[]}
 url = 'https://rpc.info/'
 file = stripWeb(url)+'.txt'
@@ -176,6 +180,8 @@ for i in range(0,len(tables)):
                 if tabl[c] == '<':
                     go = False
                     if 'ms' not in z and z not in ['\u200c', 'Add to Metamask','']:
+                        if ifLsInStr(z,['Mainnet','Testnet']):
+                            input(z)
                         lsN[k].append(z)
                     z = ''
                 else:
