@@ -1,0 +1,186 @@
+from selenium import webdriver
+import urllib.request
+from selenium.webdriver.common.by import By
+import urllib.request as urllib2
+import requests
+import os
+from selenium import webdriver
+import time
+def home_it():
+    changeGlob('home',os.getcwd())
+    slash = '//'
+    if '//' not in str(home):
+        slash = '/'
+    changeGlob('slash',slash)
+def changeGlob(x,v):
+    globals()[x] = v
+def pen(paper, place):
+    with open(place, 'w') as f:
+        f.write(str(paper))
+        f.close()
+        return
+def exists(x):
+    try:
+        x = reader(x)
+        return True
+    except:
+        return False
+def stripWeb(x):
+    if 'http' in x:
+        x = x.replace('https','').replace('http','')
+        while x[0] in [':',slash] and len(x)>1:
+            x = x[1:]
+    return x.split(slash)[0]
+def getSource(x):
+    browser=webdriver.Firefox()
+    browser.get(x)
+    html = browser.page_source
+    time.sleep(2)
+    browser.close()
+    return html
+def reader(file):
+    with open(file, 'r') as f:
+        text = f.read()
+        return text
+def cleanSplit(ls):
+    lsN = []
+    for i in range(0,len(ls)):
+        if ls[i] != '':
+            lsN.append(ls[i])
+    return lsN
+def isLs(ls):
+    if type(ls) is list:
+        return True
+    return False
+
+def splIt(x,y):
+    if y in x:
+        x = cleanSplit(x.split(y))
+    return x
+def addStr(ls):
+    n = ls[0]
+    for i in range(0,len(ls)):
+        if ls[i] not in ['',None]:
+            n = n + ls[i]
+    return n
+def buildFromFirst(x,y):
+    spl = splIt(x,y)
+    if isLs(spl) == False:
+        return spl,False,False
+    if len(spl) <= 1:
+        return spl,spl,False
+    n = spl[1]
+    for i in range(2,len(spl)):
+        n = addStr([n,y,spl[i]])
+    return n,spl[1:],spl[0]
+def splitAllForMid(x,y,z):
+    dat,ls,first = buildFromFirst(x,y)
+    lsN = []
+    for i in range(0,len(ls)):
+        new,spl,first = buildFromFirst(ls[i],z)
+        if first != False:
+            lsN.append(first)
+    return lsN
+def ifEq(x,y):
+    if x == y:
+        return True
+    return False
+def ifIn(x,y):
+    if y in x:
+        return True
+    return False
+def countIt(x,y):
+    return (len(x)-len(x.replace(y,'')))/len(y)
+def safeSplit(x,y):
+    if len(y) == 0:
+        return x
+    if ifIn(x,y) and ifEq(x[:len(y)],y):
+        x = x.split(y)[1:]
+    return x
+def isInt(x):
+    if type(x) is int:
+        return True
+    try:
+        z = int(x)
+        return True
+    except:
+        return False
+    return False
+def isChainId(x):
+    if '0x' == x[:2]:
+        return True
+    return isInt(x)
+def ifMostMatch(x,y):
+    cou = 0
+    for i in range(0,len(y)):
+        if isInt(y[i]) == False:
+            if y[i].lower() in x.lower():
+                cou += 1
+    if cou == 0:
+        return False
+    if float(cou)/float(len(y)) > float(0.5):
+         return True
+    return False
+def getIt(js,lsN):
+    form = ['Network', 'RPC URL','Chain ID', 'Native Currency', 'Block Explorer','Native Currency']
+    for i in range(0,len(lsN)):
+        name = lsN[i][0]
+        if name not in js['names']:
+            js['names'].append(name)
+            js[name] = []
+        jsA,notGot = {},[]
+        for k in range(0,len(lsN[i])):
+            x = lsN[i][k]
+            if 'http' in x:
+                if 'RPC URL' not in jsA:
+                    jsA['RPC URL'] = x
+                else:
+                    jsA['Block Explorer'] = x
+            elif isChainId(x):
+                    jsA['chainId'] = x
+            elif ifMostMatch(name,x):
+                jsA['Native Currency'] = x
+            elif x in ['Mainnet','TestNet']:
+                jsA['Network'] = x
+            else:
+                notGot.append(k)
+        if len(notGot) >0:
+            cou = 0
+            for i in range(0,len(form)):
+                if form[i] not in jsA and cou <= len(notGot):
+                    jsA[form[i]] = lsN[i][notGot[0]]
+                    cou +=1     
+        js[name].append(jsA)
+    return js
+home_it()
+check = {'Blockchain':'name', 'Network':['Mainnet','TestNet'], 'RPC URL':'https', 'Ping':'ms', 'Chain ID':'isInt', 'Native Currency':None, 'Block Explorer':'https','Gas Price (GWEI)':None, 'Block Number':None}
+js = {'names':[]}
+url = 'https://rpc.info/'
+file = stripWeb(url)+'.txt'
+if exists(file) == False:
+    pen(getSource(url),file)
+source = reader(file)
+lsHeads = splitAllForMid(source,'<table class="table-auto"><thead><tr><th>','</th></tr></thead><tbody>')
+dat = splIt(lsHeads[0],'</th><th>')
+lsN = []
+tables = splitAllForMid(source,'<tbody>','</tbody>')
+for i in range(0,len(tables)):
+    table = splIt(tables[i],'</tr>')
+    for k in range(0,len(table)):
+        lsN.append([])
+        z = ''
+        go = False
+        tabl = table[k].split('</tb>')[0]
+        for c in range(0,len(tabl)):
+            if go == True:
+                if tabl[c] == '<':
+                    go = False
+                    if 'ms' not in z and z not in ['\u200c', 'Add to Metamask','']:
+                        lsN[k].append(z)
+                    z = ''
+                else:
+                    z = z + tabl[c]
+            if tabl[c] == '>':
+                go = True
+js = getIt(js,lsN)
+pen(js,'rpcData.json')
